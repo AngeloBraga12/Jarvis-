@@ -1,7 +1,7 @@
 """Small localhost-only HTTP API for the foundation release."""
 
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from app.core.agent import Agent
 
@@ -17,7 +17,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def do_GET(self) -> None:  # noqa: N802
+    def do_GET(self) -> None:
         if self.path == "/health":
             self._send(200, {"status": "ok", "version": "0.1.0"})
         elif self.path == "/system":
