@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented here.
 
+## [0.3.0] - 2026-09-15
+
+### Added
+- OpenAI Responses API provider behind a vendor-neutral LLM interface.
+- Server-side model configuration through `OPENAI_API_KEY` and `JARVIS_MODEL`.
+- Bounded in-memory conversation context for multi-turn interaction.
+- Natural-language routing from the Command Center to the language model.
+- Live LLM connection status in the UI.
+- Fail-closed behavior when the LLM is unavailable or not configured.
+- Unit tests for provider routing, context preservation and missing-provider behavior.
+
+### Security
+- API credentials remain exclusively in the Python backend.
+- Browser code never receives the provider API key.
+- OpenAI Responses requests explicitly use `store=False`.
+- Conversation memory is not persisted to disk.
+- Conversation reset is exposed only as an explicit POST action.
+- LLM failures cannot fall through to arbitrary operating-system commands.
+
 ## [0.2.0] - 2026-09-15
 
 ### Added
