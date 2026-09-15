@@ -1,4 +1,4 @@
-const state = { mode: "idle", recognition: null, listening: false, audio: null, analyser: null, animation: 0 };
+const state = { mode: "idle", recognition: null, listening: false, animation: 0 };
 
 const $ = (id) => document.getElementById(id);
 const visualizer = $("visualizer");
@@ -119,8 +119,8 @@ async function loadSystem() {
     const payload = await response.json();
     const data = payload.result || {};
     $("cpuValue").textContent = `${data.cpu_count ?? "--"} núcleos`;
-    $("ramValue").textContent = data.memory ?? "Disponível";
-    $("diskValue").textContent = data.disk_free ?? "Disponível";
+    $("ramValue").textContent = "N/D";
+    $("diskValue").textContent = data.disk_free_gb != null ? `${data.disk_free_gb} GB livres` : "N/D";
     $("gpuValue").textContent = "N/D";
     addActivity("Sistema verificado", `${data.os ?? "Sistema"} • ${data.hostname ?? "host local"}`, "✓");
   } catch {
