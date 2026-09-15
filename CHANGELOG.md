@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented here.
 
+## [0.6.0] - 2026-09-15
+
+### Added
+- Provider-neutral speech-to-text and text-to-speech interfaces.
+- Voice capability detection that does not open audio devices.
+- Explicit push-to-talk interaction model and browser voice fallback.
+- Voice privacy policy with no continuous capture and no audio storage by default.
+- Read-only `/voice/capabilities` endpoint.
+- Voice architecture documentation and automated interface/capability tests.
+
+### Security
+- Native voice integrations are not falsely reported as available before their adapters exist.
+- Microphone activation remains explicit and interaction-scoped.
+- Wake-word processing is disabled until a future explicit preference flow exists.
+- Audio content is not sent to audit logs or persisted by the voice foundation.
+
 ## [0.5.0] - 2026-09-15
 
 ### Added
