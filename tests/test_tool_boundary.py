@@ -54,7 +54,7 @@ def test_model_tool_request_cannot_bypass_permission_boundary(tmp_path) -> None:
         ]
     )
 
-    result = handle_command("execute algo no computador", agent, provider, Conversation())
+    result = handle_command("execute uma tarefa", agent, provider, Conversation())
 
     assert result["ok"] is True
     assert result["message"] == "Ferramenta executada com segurança."
