@@ -1,12 +1,15 @@
 """Small deterministic command router used by the local UI foundation."""
 
-from app.core.agent import Agent
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.agent import Agent
 
 
 STATUS_TERMS = ("status", "sistema", "computador", "pc", "recursos")
 
 
-def handle_command(command: str, agent: Agent) -> dict[str, object]:
+def handle_command(command: str, agent: "Agent") -> dict[str, object]:
     """Route only safe, explicitly supported commands in the foundation UI."""
     normalized = " ".join(command.casefold().split())
     if not normalized:
