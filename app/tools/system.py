@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import platform
 import shutil
-import time
 
 
 def _gb(value: int) -> float:
@@ -41,6 +40,5 @@ def system_health() -> dict[str, object]:
         "cpu_count": os.cpu_count(),
         "disk_free_gb": _gb(disk.free),
         "disk_total_gb": _gb(disk.total),
-        "uptime_seconds": round(time.monotonic()),
         "load_average": load_average,
     }
