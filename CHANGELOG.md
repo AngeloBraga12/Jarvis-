@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here.
 
+## [0.5.0] - 2026-09-15
+
+### Added
+- Read-only `system_health` tool for richer local diagnostics.
+- CPU count, architecture, Python version, disk capacity and load-average reporting where the platform provides it.
+- Security tests covering the new diagnostic tool and model-visible registry.
+
+### Security
+- `system_health` is classified as safe and accepts no arguments.
+- Diagnostic output is limited to technical runtime information and does not collect user files, prompts or secrets.
+- The model still cannot access arbitrary shell, file deletion or unregistered capabilities.
+
 ## [0.4.0] - 2026-09-15
 
 ### Added
