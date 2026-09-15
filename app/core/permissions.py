@@ -11,6 +11,7 @@ class Risk(str, Enum):
 
 TOOL_RISK: dict[str, Risk] = {
     "system_status": Risk.SAFE,
+    "current_time": Risk.SAFE,
     "open_application": Risk.CONFIRM,
     "read_file": Risk.CONFIRM,
     "write_file": Risk.CONFIRM,
