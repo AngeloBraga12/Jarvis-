@@ -30,7 +30,7 @@ def _run_model_tools(
             continue
         if not isinstance(arguments, dict):
             arguments = {}
-        agent.audit.record("model_tool_request", tool=name, arguments=arguments)
+        agent.audit.record("model_tool_request", tool=name)
         result = agent.run(name, **arguments)
         outputs.append(
             {
