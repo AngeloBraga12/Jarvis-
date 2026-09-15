@@ -4,12 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jarvis-assistant"
-version = "0.2.0"
-description = "Personal AI assistant with permissioned tool execution and local command center UI"
+version = "0.3.0"
+description = "Personal AI assistant with permissioned tool execution, conversation and local command center UI"
 requires-python = ">=3.11"
 readme = "README.md"
 license = { file = "LICENSE" }
-dependencies = []
+dependencies = [
+  "openai>=1.0,<3",
+]
 
 [project.optional-dependencies]
 dev = [
