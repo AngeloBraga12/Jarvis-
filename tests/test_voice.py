@@ -7,6 +7,7 @@ import pytest
 from app.voice_base import SpeechToTextProvider, TextToSpeechProvider
 from app.voice_capabilities import detect_capabilities
 from app.voice_windows import WindowsSapiTTS
+from app.voice_windows_stt import WindowsSpeechRecognizer
 
 
 class DummySTT(SpeechToTextProvider):
@@ -39,14 +40,29 @@ def test_native_tts_capability_is_platform_aware() -> None:
         assert capabilities["native_tts"] is False
 
 
-def test_native_stt_is_not_claimed_yet() -> None:
-    assert detect_capabilities()["native_stt"] is False
+def test_native_stt_capability_is_platform_aware() -> None:
+    capabilities = detect_capabilities()
+    if platform.system() != "Windows":
+        assert capabilities["native_stt"] is False
 
 
 def test_windows_sapi_rejects_non_windows() -> None:
     if platform.system() != "Windows":
         with pytest.raises(RuntimeError, match="only on Windows"):
             WindowsSapiTTS()
+
+
+def test_windows_stt_rejects_non_windows() -> None:
+    if platform.system() != "Windows":
+        with pytest.raises(RuntimeError, match="only on Windows"):
+            WindowsSpeechRecognizer()
+
+
+def test_windows_stt_rejects_raw_audio() -> None:
+    if platform.system() == "Windows":
+        pytest.skip("native Windows STT owns the microphone session")
+    with pytest.raises(RuntimeError, match="only on Windows"):
+        WindowsSpeechRecognizer()
 
 
 def test_abstract_voice_provider_cannot_be_instantiated() -> None:
