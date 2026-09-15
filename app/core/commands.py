@@ -1,7 +1,5 @@
 """Small deterministic command router used by the local UI foundation."""
 
-from __future__ import annotations
-
 from app.core.agent import Agent
 
 
