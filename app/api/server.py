@@ -12,10 +12,11 @@ from app.core.agent import Agent
 from app.core.commands import handle_command
 from app.core.conversation import Conversation
 from app.providers.openai import OpenAIProvider
+from app.voice_capabilities import detect_capabilities
 
 UI_DIR = Path(__file__).resolve().parent.parent / "ui"
 MAX_BODY_BYTES = 4096
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -92,6 +93,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(HTTPStatus.OK, self.agent.run("system_status"))
         elif path == "/system/health":
             self._send(HTTPStatus.OK, self.agent.run("system_health"))
+        elif path == "/voice/capabilities":
+            self._send(HTTPStatus.OK, {"ok": True, "capabilities": detect_capabilities()})
         else:
             self._send(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
