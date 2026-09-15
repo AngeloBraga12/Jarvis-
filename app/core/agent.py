@@ -10,7 +10,7 @@ from app.core.audit import AuditLog
 from app.core.permissions import TOOL_RISK, Risk, risk_for
 from app.tools.apps import ALLOWED_APPLICATIONS, open_application
 from app.tools.safe import current_time
-from app.tools.system import system_status
+from app.tools.system import system_health, system_status
 
 
 @dataclass(frozen=True)
@@ -23,7 +23,7 @@ class ToolDecision:
 
 def _validate_arguments(tool_name: str, arguments: dict[str, Any]) -> str | None:
     """Validate the small public tool surface before authorization or execution."""
-    if tool_name in {"system_status", "current_time"}:
+    if tool_name in {"system_status", "system_health", "current_time"}:
         if arguments:
             return "tool does not accept arguments"
         return None
@@ -103,6 +103,8 @@ class Agent:
         try:
             if tool_name == "system_status":
                 result = system_status()
+            elif tool_name == "system_health":
+                result = system_health()
             elif tool_name == "current_time":
                 result = current_time()
             elif tool_name == "open_application":
