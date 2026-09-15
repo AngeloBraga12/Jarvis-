@@ -49,6 +49,28 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _read_json(self) -> dict[str, object] | None:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            self._send(HTTPStatus.BAD_REQUEST, {"error": "invalid content length"})
+            return None
+        if length <= 0 or length > MAX_BODY_BYTES:
+            self._send(
+                HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
+                {"error": "request body too large or empty"},
+            )
+            return None
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            self._send(HTTPStatus.BAD_REQUEST, {"error": "invalid JSON"})
+            return None
+        if not isinstance(payload, dict):
+            self._send(HTTPStatus.BAD_REQUEST, {"error": "JSON object required"})
+            return None
+        return payload
+
     def do_GET(self) -> None:
         path = urlsplit(self.path).path
         if path in {"/", "/ui/"}:
@@ -77,30 +99,35 @@ class Handler(BaseHTTPRequestHandler):
             self.conversation.clear()
             self._send(HTTPStatus.OK, {"ok": True})
             return
+
+        if path == "/approval":
+            payload = self._read_json()
+            if payload is None:
+                return
+            request_id = payload.get("request_id")
+            decision = payload.get("decision")
+            if not isinstance(request_id, str) or len(request_id) != 32:
+                self._send(HTTPStatus.BAD_REQUEST, {"error": "invalid request_id"})
+                return
+            if decision == "approve":
+                result = self.agent.approve(request_id)
+            elif decision == "deny":
+                result = self.agent.deny(request_id)
+            else:
+                self._send(HTTPStatus.BAD_REQUEST, {"error": "decision must be approve or deny"})
+                return
+            status = HTTPStatus.OK if result.get("ok") else HTTPStatus.NOT_FOUND
+            self._send(status, result)
+            return
+
         if path != "/command":
             self._send(HTTPStatus.NOT_FOUND, {"error": "not found"})
             return
 
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-        except ValueError:
-            self._send(HTTPStatus.BAD_REQUEST, {"error": "invalid content length"})
+        payload = self._read_json()
+        if payload is None:
             return
-
-        if length <= 0 or length > MAX_BODY_BYTES:
-            self._send(
-                HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
-                {"error": "request body too large or empty"},
-            )
-            return
-
-        try:
-            payload = json.loads(self.rfile.read(length).decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            self._send(HTTPStatus.BAD_REQUEST, {"error": "invalid JSON"})
-            return
-
-        command = payload.get("command") if isinstance(payload, dict) else None
+        command = payload.get("command")
         if not isinstance(command, str) or len(command) > 1000:
             self._send(
                 HTTPStatus.BAD_REQUEST,
