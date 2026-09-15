@@ -9,56 +9,70 @@
 - [x] Local API
 - [x] Unit tests
 
-## 0.2 Reasoning
-- [ ] Provider-neutral LLM adapter
-- [ ] Structured tool calling
-- [ ] Conversation state
-- [ ] Timeouts and cancellation
-- [ ] Model failure handling
+## 0.2 Command Center
+- [x] Desktop-style local interface
+- [x] Listening/thinking/speaking visual states
+- [x] Browser speech recognition and synthesis
+- [x] Bounded command API
+- [x] Approval dialog
 
-## 0.3 Voice
-- [ ] Speech-to-text
-- [ ] Text-to-speech
+## 0.3 LLM
+- [x] Provider-neutral LLM adapter
+- [x] OpenAI Responses API integration
+- [x] Structured tool calling
+- [x] Bounded conversation state
+- [x] Model failure handling
+- [x] Server-side API key isolation
+
+## 0.4 Permissioned tools
+- [x] Explicit model-visible tool registry
+- [x] Safe/confirm/dangerous risk classes
+- [x] Allowlisted application launch
+- [x] Single-use approval requests
+- [x] Approval expiration
+- [x] Fail-closed unknown-tool handling
+- [x] Security tests for model/tool boundary
+
+## 0.5 System diagnostics
+- [x] Basic OS and disk diagnostics
+- [x] Read-only system health metrics
+- [x] CPU, architecture and Python runtime information
+- [x] Load-average reporting where supported
+- [x] `/system/health` endpoint
+
+## 0.6 Native voice and preferences
+- [ ] Native Windows speech-to-text adapter
+- [ ] Native Windows text-to-speech adapter
 - [ ] Wake-word strategy
 - [ ] Push-to-talk fallback
 - [ ] Audio privacy controls
+- [ ] User-approved preferences
 
-## 0.4 Memory
-- [ ] Short-term conversation memory
-- [ ] User-approved persistent memory
-- [ ] Memory deletion/export
-- [ ] Encryption strategy
+## 0.7 Persistent memory
+- [ ] Explicit memory opt-in
+- [ ] Local encrypted storage
+- [ ] Memory deletion and export
+- [ ] Per-category retention controls
+- [ ] Memory audit events without storing unnecessary content
 
-## 0.5 Vision
+## 0.8 Vision
 - [ ] Screenshot capture
 - [ ] OCR
 - [ ] Visual reasoning adapter
 - [ ] Explicit screen-sharing boundaries
 
-## 0.6 Windows automation
+## 0.9 Windows automation and integrations
 - [ ] Application discovery
-- [ ] Safe application launch
-- [ ] Window management
+- [ ] Safe window management
 - [ ] Controlled filesystem operations
-- [ ] Approval UI for impactful actions
-
-## 0.7 Git/GitHub
-- [ ] Repository inspection
-- [ ] Branch/status operations
-- [ ] Safe commit preparation
-- [ ] Pull request workflows
-
-## 0.8 Browser
+- [ ] Git/GitHub tools
 - [ ] Browser session isolation
-- [ ] Navigation and page extraction
 - [ ] Confirmation for purchases, submissions and account changes
 
-## 0.9 Multimodal agent
+## 1.0 Multimodal assistant
 - [ ] Combined voice + vision + tools
 - [ ] Long-running task state
 - [ ] Recovery and retry policies
-
-## 1.0
 - [ ] Security review
 - [ ] Reliability benchmark
 - [ ] Full test suite
