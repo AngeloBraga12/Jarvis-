@@ -9,8 +9,7 @@ def test_status_command_uses_safe_tool() -> None:
     assert result["result"]["ok"] is True
 
 
-def test_unknown_command_does_not_execute_a_tool() -> None:
+def test_unknown_command_fails_closed_without_llm() -> None:
     result = handle_command("apague meus arquivos", Agent())
-    assert result["ok"] is True
-    assert result["supported"] is False
-    assert "ainda será conectado" in result["message"]
+    assert result["ok"] is False
+    assert result["error"] == "llm_not_configured"
