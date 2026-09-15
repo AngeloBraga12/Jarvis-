@@ -25,10 +25,22 @@ class ToolCallingProvider(LLMProvider):
         return "Ferramenta executada com segurança."
 
 
-def test_model_sees_only_safe_tool() -> None:
+def test_model_sees_only_registered_tools() -> None:
     tools = model_tools()
-    assert [tool["name"] for tool in tools] == ["system_status"]
+    names = {tool["name"] for tool in tools}
+    assert names == {"system_status", "current_time", "open_application"}
     assert all(tool["name"] not in {"execute_command", "delete_file"} for tool in tools)
+
+
+def test_unknown_tool_is_blocked_without_approval(tmp_path) -> None:
+    agent = Agent()
+    agent.audit.path = tmp_path / "audit.jsonl"
+
+    result = agent.run("unknown_tool", value="blocked")
+
+    assert result["ok"] is False
+    assert result["requires_approval"] is False
+    assert result["error"] == "unknown tool blocked"
 
 
 def test_dangerous_tool_is_blocked_even_if_model_requests_it(tmp_path) -> None:
