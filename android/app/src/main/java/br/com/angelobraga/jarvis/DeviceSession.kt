@@ -10,8 +10,8 @@ sealed interface DeviceSession {
 }
 
 /**
- * Small, deterministic state machine. Network code is deliberately absent here so a
- * transport bug cannot silently turn into an authorization state.
+ * Deterministic state machine. Transport and authorization are deliberately absent so
+ * a networking failure cannot silently become an authenticated state.
  */
 class DeviceSessionController(initial: DeviceSession = DeviceSession.Unpaired) {
     var state: DeviceSession = initial
