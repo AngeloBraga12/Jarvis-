@@ -1,4 +1,4 @@
-const state = { mode: "idle", recognition: null, listening: false, animation: 0, audioContext: null, analyser: null, micStream: null };
+const state = { mode: "idle", recognition: null, listening: false, animation: 0, audioContext: null, analyser: null, micStream: null, approval: null };
 
 const $ = (id) => document.getElementById(id);
 const visualizer = $("visualizer");
@@ -69,7 +69,6 @@ function drawWave() {
     amplitude += level * 120;
   }
   const speed = performance.now() / (state.mode === "thinking" ? 480 : 210);
-
   for (let side = 0; side < 2; side += 1) {
     ctx.beginPath();
     const center = side === 0 ? width * 0.27 : width * 0.73;
@@ -120,6 +119,49 @@ function speak(text) {
   window.speechSynthesis.speak(utterance);
 }
 
+function showApproval(request) {
+  state.approval = request;
+  $("approvalTool").textContent = request.tool || "ação protegida";
+  $("approvalDescription").textContent = request.description || "Esta ação exige sua confirmação explícita.";
+  $("approvalDialog").hidden = false;
+  addActivity("Aprovação necessária", request.description || request.tool, "!");
+}
+
+function hideApproval() {
+  state.approval = null;
+  $("approvalDialog").hidden = true;
+}
+
+async function decideApproval(decision) {
+  const request = state.approval;
+  if (!request?.request_id) return;
+  $("approvalApprove").disabled = true;
+  $("approvalDeny").disabled = true;
+  try {
+    const response = await fetch("/approval", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ request_id: request.request_id, decision })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Não foi possível processar a aprovação");
+    const message = decision === "approve"
+      ? (payload.ok ? "Ação autorizada e executada." : "A ação não pôde ser executada.")
+      : "Ação recusada. Nenhuma alteração foi feita.";
+    addActivity(decision === "approve" ? "Ação autorizada" : "Ação recusada", message, decision === "approve" ? "✓" : "×");
+    hideApproval();
+    speak(message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    addActivity("Falha na autorização", message, "!");
+    hideApproval();
+    setState("idle", "Pronto para ouvir");
+  } finally {
+    $("approvalApprove").disabled = false;
+    $("approvalDeny").disabled = false;
+  }
+}
+
 async function sendCommand(text) {
   const command = text.trim();
   if (!command) return;
@@ -127,7 +169,6 @@ async function sendCommand(text) {
   setState("thinking", "Processando comando");
   addActivity("Comando recebido", command, "↗");
   commandInput.value = "";
-
   try {
     const response = await fetch("/command", {
       method: "POST",
@@ -136,9 +177,9 @@ async function sendCommand(text) {
     });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.message || payload.error || "Falha ao processar comando");
-
     const message = payload.message || "Comando recebido.";
     addActivity("JARVIS respondeu", message, payload.source === "llm" ? "◉" : "✓");
+    if (Array.isArray(payload.approval_required) && payload.approval_required.length > 0) showApproval(payload.approval_required[0]);
     speak(message);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
@@ -152,9 +193,7 @@ async function loadHealth() {
     const response = await fetch("/health", { cache: "no-store" });
     const payload = await response.json();
     if (!response.ok || payload.status !== "ok") throw new Error("Backend indisponível");
-    $("connectionLabel").innerHTML = payload.llm_configured
-      ? "<i></i> JARVIS conectado"
-      : "<i style='background:#ff9e49'></i> LLM não configurado";
+    $("connectionLabel").innerHTML = payload.llm_configured ? "<i></i> JARVIS conectado" : "<i style='background:#ff9e49'></i> LLM não configurado";
   } catch {
     $("connectionLabel").innerHTML = "<i style='background:#ff5f5f'></i> Offline";
   }
@@ -182,53 +221,34 @@ function setupSpeechRecognition() {
   recognition.lang = "pt-BR";
   recognition.interimResults = true;
   recognition.continuous = false;
-  recognition.onstart = async () => {
-    state.listening = true;
-    setState("listening", "Ouvindo você");
-    await startMicMeter();
-  };
+  recognition.onstart = async () => { state.listening = true; setState("listening", "Ouvindo você"); await startMicMeter(); };
   recognition.onresult = (event) => {
     let transcript = "";
     for (let i = event.resultIndex; i < event.results.length; i += 1) transcript += event.results[i][0].transcript;
     commandInput.value = transcript;
     if (event.results[event.results.length - 1].isFinal) sendCommand(transcript);
   };
-  recognition.onerror = () => {
-    state.listening = false;
-    stopMicMeter();
-    setState("idle", "Pronto para ouvir");
-    addActivity("Microfone", "Não foi possível iniciar o reconhecimento de voz", "!");
-  };
-  recognition.onend = () => {
-    state.listening = false;
-    stopMicMeter();
-    if (state.mode === "listening") setState("idle", "Pronto para ouvir");
-  };
+  recognition.onerror = () => { state.listening = false; stopMicMeter(); setState("idle", "Pronto para ouvir"); addActivity("Microfone", "Não foi possível iniciar o reconhecimento de voz", "!"); };
+  recognition.onend = () => { state.listening = false; stopMicMeter(); if (state.mode === "listening") setState("idle", "Pronto para ouvir"); };
   return recognition;
 }
 
 state.recognition = setupSpeechRecognition();
 
 function toggleListening() {
-  if (!state.recognition) {
-    commandInput.focus();
-    addActivity("Microfone não suportado", "Digite o comando no campo abaixo", "!");
-    return;
-  }
+  if (!state.recognition) { commandInput.focus(); addActivity("Microfone não suportado", "Digite o comando no campo abaixo", "!"); return; }
   if (state.listening) state.recognition.stop(); else state.recognition.start();
 }
 
 $("wakeButton").addEventListener("click", toggleListening);
 $("micButton").addEventListener("click", toggleListening);
-$("commandForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  sendCommand(commandInput.value);
-});
+$("commandForm").addEventListener("submit", (event) => { event.preventDefault(); sendCommand(commandInput.value); });
 $("clearActivity").addEventListener("click", () => { activityList.innerHTML = ""; });
+$("approvalApprove").addEventListener("click", () => decideApproval("approve"));
+$("approvalDeny").addEventListener("click", () => decideApproval("deny"));
+$("approvalDialog").addEventListener("click", (event) => { if (event.target === $("approvalDialog")) decideApproval("deny"); });
 
-document.querySelectorAll("[data-command]").forEach((button) => {
-  button.addEventListener("click", () => sendCommand(button.dataset.command));
-});
+document.querySelectorAll("[data-command]").forEach((button) => { button.addEventListener("click", () => sendCommand(button.dataset.command)); });
 
 addActivity("Interface iniciada", "Command Center carregado", "✓");
 loadHealth();
