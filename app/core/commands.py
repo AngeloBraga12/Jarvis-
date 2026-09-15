@@ -1,16 +1,24 @@
-"""Small deterministic command router used by the local UI foundation."""
+"""Command router for deterministic tools and the language-model conversation."""
 
 from typing import TYPE_CHECKING
 
+from app.core.conversation import Conversation
+
 if TYPE_CHECKING:
     from app.core.agent import Agent
+    from app.providers.base import LLMProvider
 
 
 STATUS_TERMS = ("status", "sistema", "computador", "pc", "recursos")
 
 
-def handle_command(command: str, agent: "Agent") -> dict[str, object]:
-    """Route only safe, explicitly supported commands in the foundation UI."""
+def handle_command(
+    command: str,
+    agent: "Agent",
+    provider: "LLMProvider | None" = None,
+    conversation: Conversation | None = None,
+) -> dict[str, object]:
+    """Route safe commands first, then delegate natural language to the LLM."""
     normalized = " ".join(command.casefold().split())
     if not normalized:
         return {"ok": False, "message": "Não recebi nenhum comando."}
@@ -29,8 +37,25 @@ def handle_command(command: str, agent: "Agent") -> dict[str, object]:
                 "result": result,
             }
 
-    return {
-        "ok": True,
-        "message": "Recebi o comando. O núcleo de linguagem ainda será conectado nesta etapa.",
-        "supported": False,
-    }
+    if provider is None:
+        return {
+            "ok": False,
+            "message": "O núcleo de linguagem não está configurado. Defina OPENAI_API_KEY no ambiente do JARVIS.",
+            "error": "llm_not_configured",
+        }
+
+    session = conversation or Conversation()
+    try:
+        messages = session.snapshot_with_user(command)
+        response = provider.respond(messages)
+        session.append_turn(command, response)
+    except Exception as exc:
+        agent.audit.record("llm_error", error=type(exc).__name__)
+        return {
+            "ok": False,
+            "message": "Não consegui consultar o núcleo de linguagem agora.",
+            "error": "llm_request_failed",
+        }
+
+    agent.audit.record("llm_response", model=getattr(provider, "model", "unknown"))
+    return {"ok": True, "message": response, "source": "llm"}
