@@ -7,7 +7,7 @@ from typing import Any
 
 from app.core.approvals import ApprovalStore
 from app.core.audit import AuditLog
-from app.core.permissions import Risk, risk_for
+from app.core.permissions import TOOL_RISK, Risk, risk_for
 from app.tools.apps import open_application
 from app.tools.safe import current_time
 from app.tools.system import system_status
@@ -31,13 +31,16 @@ class Agent:
         self.approvals = approvals or ApprovalStore()
 
     def authorize(self, tool_name: str, approved: bool = False) -> ToolDecision:
-        risk = risk_for(tool_name)
-        if risk is Risk.SAFE:
-            decision = ToolDecision(True, False, risk, "safe tool")
-        elif risk is Risk.CONFIRM:
-            decision = ToolDecision(approved, not approved, risk, "explicit approval required")
+        if tool_name not in TOOL_RISK:
+            decision = ToolDecision(False, False, Risk.DANGEROUS, "unknown tool blocked")
         else:
-            decision = ToolDecision(False, False, risk, "dangerous tool blocked by default")
+            risk = risk_for(tool_name)
+            if risk is Risk.SAFE:
+                decision = ToolDecision(True, False, risk, "safe tool")
+            elif risk is Risk.CONFIRM:
+                decision = ToolDecision(approved, not approved, risk, "explicit approval required")
+            else:
+                decision = ToolDecision(False, False, risk, "dangerous tool blocked by default")
         self.audit.record("authorization", tool=tool_name, **decision.__dict__)
         return decision
 
@@ -77,7 +80,7 @@ class Agent:
         elif tool_name == "open_application":
             result = open_application(**kwargs)
         else:
-            raise NotImplementedError(f"Tool not implemented: {tool_name}")
+            raise RuntimeError("registered tool has no execution handler")
 
         self.audit.record("tool_execution", tool=tool_name, success=True)
         return {"ok": True, "result": result}
