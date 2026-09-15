@@ -40,13 +40,18 @@
 - [x] Load-average reporting where supported
 - [x] `/system/health` endpoint
 
-## 0.6 Native voice and preferences
+## 0.6 Voice foundation
+- [x] Provider-neutral speech-to-text interface
+- [x] Provider-neutral text-to-speech interface
+- [x] Voice capability detection without opening audio devices
+- [x] Push-to-talk as the explicit interaction model
+- [x] Browser STT/TTS fallback remains available
+- [x] Privacy-safe defaults: no continuous capture or audio storage
+- [x] `/voice/capabilities` endpoint
 - [ ] Native Windows speech-to-text adapter
 - [ ] Native Windows text-to-speech adapter
-- [ ] Wake-word strategy
-- [ ] Push-to-talk fallback
-- [ ] Audio privacy controls
-- [ ] User-approved preferences
+- [ ] User-approved voice preferences
+- [ ] Wake-word adapter
 
 ## 0.7 Persistent memory
 - [ ] Explicit memory opt-in
