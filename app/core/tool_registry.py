@@ -26,6 +26,18 @@ SYSTEM_STATUS_TOOL = {
     "strict": True,
 }
 
+SYSTEM_HEALTH_TOOL = {
+    "type": "function",
+    "name": "system_health",
+    "description": "Obtém métricas técnicas somente leitura do computador, sem alterar o sistema.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    },
+    "strict": True,
+}
+
 OPEN_APPLICATION_TOOL = {
     "type": "function",
     "name": "open_application",
@@ -48,4 +60,9 @@ OPEN_APPLICATION_TOOL = {
 
 def model_tools() -> list[dict[str, object]]:
     """Return only explicitly approved model-visible tools."""
-    return [CURRENT_TIME_TOOL.copy(), SYSTEM_STATUS_TOOL.copy(), OPEN_APPLICATION_TOOL.copy()]
+    return [
+        CURRENT_TIME_TOOL.copy(),
+        SYSTEM_STATUS_TOOL.copy(),
+        SYSTEM_HEALTH_TOOL.copy(),
+        OPEN_APPLICATION_TOOL.copy(),
+    ]
