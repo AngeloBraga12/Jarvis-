@@ -15,7 +15,7 @@ The Android client is responsible for:
 - authenticated device pairing in a future protocol layer
 - presenting approvals and responses without receiving provider secrets
 
-Jetpack Compose is used for the native UI. Android's `SpeechRecognizer` requires `RECORD_AUDIO` permission and is explicitly started by the user; it is not used for continuous recognition. Android documentation also notes that the recognition implementation may stream audio to a remote service, so JARVIS treats it as an explicit user interaction rather than an always-on microphone. citeturn0search0turn0search3
+Jetpack Compose is used for the native UI. Android's `SpeechRecognizer` requires `RECORD_AUDIO` permission and is explicitly started by the user; it is not used for continuous recognition. Android documentation also notes that the recognition implementation may stream audio to a remote service, so JARVIS treats it as an explicit user interaction rather than an always-on microphone.
 
 ## Security boundary
 
