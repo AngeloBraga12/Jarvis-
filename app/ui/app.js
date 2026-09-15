@@ -96,7 +96,7 @@ drawWave();
 function addActivity(title, detail, icon = "•") {
   const item = document.createElement("div");
   item.className = "activity";
-  item.innerHTML = `<span class="activity-icon">${icon}</span><div><b>${escapeHtml(title)}</b><small>${escapeHtml(detail)}</small></div><time>agora</time>`;
+  item.innerHTML = `<span class="activity-icon">${escapeHtml(icon)}</span><div><b>${escapeHtml(title)}</b><small>${escapeHtml(detail)}</small></div><time>agora</time>`;
   activityList.prepend(item);
   while (activityList.children.length > 6) activityList.lastElementChild.remove();
 }
@@ -135,15 +135,28 @@ async function sendCommand(text) {
       body: JSON.stringify({ command })
     });
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "Falha ao processar comando");
+    if (!response.ok) throw new Error(payload.message || payload.error || "Falha ao processar comando");
 
     const message = payload.message || "Comando recebido.";
-    addActivity("JARVIS respondeu", message, "◉");
+    addActivity("JARVIS respondeu", message, payload.source === "llm" ? "◉" : "✓");
     speak(message);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     addActivity("Falha", message, "!");
     setState("idle", "Pronto para ouvir");
+  }
+}
+
+async function loadHealth() {
+  try {
+    const response = await fetch("/health", { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok || payload.status !== "ok") throw new Error("Backend indisponível");
+    $("connectionLabel").innerHTML = payload.llm_configured
+      ? "<i></i> JARVIS conectado"
+      : "<i style='background:#ff9e49'></i> LLM não configurado";
+  } catch {
+    $("connectionLabel").innerHTML = "<i style='background:#ff5f5f'></i> Offline";
   }
 }
 
@@ -158,7 +171,6 @@ async function loadSystem() {
     $("gpuValue").textContent = "N/D";
     addActivity("Sistema verificado", `${data.os ?? "Sistema"} • ${data.hostname ?? "host local"}`, "✓");
   } catch {
-    $("connectionLabel").innerHTML = "<i style='background:#ff9e49'></i> Offline";
     addActivity("Backend indisponível", "Execute o servidor local do JARVIS", "!");
   }
 }
@@ -219,5 +231,7 @@ document.querySelectorAll("[data-command]").forEach((button) => {
 });
 
 addActivity("Interface iniciada", "Command Center carregado", "✓");
+loadHealth();
 loadSystem();
+setInterval(loadHealth, 30000);
 setInterval(loadSystem, 30000);
