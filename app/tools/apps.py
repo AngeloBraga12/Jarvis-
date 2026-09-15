@@ -5,7 +5,6 @@ from __future__ import annotations
 import platform
 import subprocess
 
-
 ALLOWED_APPLICATIONS = {
     "notepad": {
         "windows": ["notepad.exe"],
