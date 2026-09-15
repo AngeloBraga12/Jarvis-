@@ -11,6 +11,7 @@ class Risk(str, Enum):
 
 TOOL_RISK: dict[str, Risk] = {
     "system_status": Risk.SAFE,
+    "system_health": Risk.SAFE,
     "current_time": Risk.SAFE,
     "open_application": Risk.CONFIRM,
     "read_file": Risk.CONFIRM,
@@ -21,5 +22,5 @@ TOOL_RISK: dict[str, Risk] = {
 
 
 def risk_for(tool_name: str) -> Risk:
-    """Return the risk class for a tool; unknown tools fail closed."""
+    """Return the risk class for a tool; unknown tools fail closed in Agent."""
     return TOOL_RISK.get(tool_name, Risk.CONFIRM)
