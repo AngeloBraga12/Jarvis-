@@ -1,4 +1,4 @@
-const state = { mode: "idle", recognition: null, listening: false, animation: 0 };
+const state = { mode: "idle", recognition: null, listening: false, animation: 0, audioContext: null, analyser: null, micStream: null };
 
 const $ = (id) => document.getElementById(id);
 const visualizer = $("visualizer");
@@ -30,13 +30,44 @@ function setState(mode, label) {
   $("micButton").classList.toggle("active", mode === "listening");
 }
 
+async function startMicMeter() {
+  if (!navigator.mediaDevices?.getUserMedia) return;
+  try {
+    state.micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    state.audioContext = new AudioContext();
+    const source = state.audioContext.createMediaStreamSource(state.micStream);
+    state.analyser = state.audioContext.createAnalyser();
+    state.analyser.fftSize = 256;
+    source.connect(state.analyser);
+  } catch {
+    state.micStream = null;
+  }
+}
+
+function stopMicMeter() {
+  state.micStream?.getTracks().forEach((track) => track.stop());
+  state.micStream = null;
+  if (state.audioContext) state.audioContext.close();
+  state.audioContext = null;
+  state.analyser = null;
+}
+
 function drawWave() {
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
   ctx.clearRect(0, 0, width, height);
   const mid = height * 0.57;
   const active = state.mode === "listening" || state.mode === "speaking";
-  const amplitude = active ? 38 : 5;
+  let amplitude = active ? 22 : 5;
+  let level = 0;
+  if (state.analyser && state.mode === "listening") {
+    const samples = new Uint8Array(state.analyser.fftSize);
+    state.analyser.getByteTimeDomainData(samples);
+    let total = 0;
+    for (const sample of samples) total += Math.abs(sample - 128);
+    level = total / samples.length / 128;
+    amplitude += level * 120;
+  }
   const speed = performance.now() / (state.mode === "thinking" ? 480 : 210);
 
   for (let side = 0; side < 2; side += 1) {
@@ -75,7 +106,10 @@ function escapeHtml(value) {
 }
 
 function speak(text) {
-  if (!("speechSynthesis" in window)) return;
+  if (!("speechSynthesis" in window)) {
+    setState("idle", "Pronto para ouvir");
+    return;
+  }
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "pt-BR";
@@ -89,6 +123,7 @@ function speak(text) {
 async function sendCommand(text) {
   const command = text.trim();
   if (!command) return;
+  stopMicMeter();
   setState("thinking", "Processando comando");
   addActivity("Comando recebido", command, "↗");
   commandInput.value = "";
@@ -104,7 +139,6 @@ async function sendCommand(text) {
 
     const message = payload.message || "Comando recebido.";
     addActivity("JARVIS respondeu", message, "◉");
-    setState("speaking", "Resposta pronta");
     speak(message);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
@@ -136,9 +170,10 @@ function setupSpeechRecognition() {
   recognition.lang = "pt-BR";
   recognition.interimResults = true;
   recognition.continuous = false;
-  recognition.onstart = () => {
+  recognition.onstart = async () => {
     state.listening = true;
     setState("listening", "Ouvindo você");
+    await startMicMeter();
   };
   recognition.onresult = (event) => {
     let transcript = "";
@@ -148,11 +183,13 @@ function setupSpeechRecognition() {
   };
   recognition.onerror = () => {
     state.listening = false;
+    stopMicMeter();
     setState("idle", "Pronto para ouvir");
     addActivity("Microfone", "Não foi possível iniciar o reconhecimento de voz", "!");
   };
   recognition.onend = () => {
     state.listening = false;
+    stopMicMeter();
     if (state.mode === "listening") setState("idle", "Pronto para ouvir");
   };
   return recognition;
