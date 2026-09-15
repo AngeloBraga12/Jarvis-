@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import os
 
-from openai import OpenAI
-from openai import OpenAIError
+from openai import OpenAI, OpenAIError
 
 from app.providers.base import LLMProvider, LLMProviderError
 
