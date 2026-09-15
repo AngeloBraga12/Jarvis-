@@ -5,8 +5,9 @@ from __future__ import annotations
 import os
 
 from openai import OpenAI
+from openai import OpenAIError
 
-from app.providers.base import LLMProvider
+from app.providers.base import LLMProvider, LLMProviderError
 
 DEFAULT_MODEL = "gpt-5.6-luna"
 DEFAULT_INSTRUCTIONS = (
@@ -33,7 +34,7 @@ class OpenAIProvider(LLMProvider):
         self.instructions = instructions
 
     @classmethod
-    def from_env(cls) -> "OpenAIProvider | None":
+    def from_env(cls) -> OpenAIProvider | None:
         api_key = os.getenv("OPENAI_API_KEY", "").strip()
         if not api_key:
             return None
@@ -43,13 +44,17 @@ class OpenAIProvider(LLMProvider):
         )
 
     def respond(self, conversation: list[dict[str, str]]) -> str:
-        response = self.client.responses.create(
-            model=self.model,
-            instructions=self.instructions,
-            input=conversation,
-            store=False,
-        )
+        try:
+            response = self.client.responses.create(
+                model=self.model,
+                instructions=self.instructions,
+                input=conversation,
+                store=False,
+            )
+        except OpenAIError as exc:
+            raise LLMProviderError("OpenAI request failed") from exc
+
         text = response.output_text.strip()
         if not text:
-            raise RuntimeError("The language model returned an empty response")
+            raise LLMProviderError("The language model returned an empty response")
         return text
