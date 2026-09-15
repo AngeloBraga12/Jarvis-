@@ -16,7 +16,7 @@ from app.voice_capabilities import detect_capabilities
 
 UI_DIR = Path(__file__).resolve().parent.parent / "ui"
 MAX_BODY_BYTES = 4096
-VERSION = "0.6.0"
+VERSION = "0.6.1"
 
 
 class Handler(BaseHTTPRequestHandler):
