@@ -6,9 +6,9 @@ Personal AI assistant for Windows, designed around voice interaction, memory, vi
 
 ## Status
 
-**Version:** 0.3.0 — Conversational Core
+**Version:** 0.4.0 — Permissioned Tools
 
-The current release connects the Command Center to an OpenAI Responses API provider through a server-side adapter. JARVIS now supports natural-language multi-turn conversation while keeping credentials out of the browser, conversation state bounded in memory and system actions behind the existing permission layer.
+The current release connects the Command Center to an OpenAI Responses API provider and adds a real tool boundary. JARVIS can use read-only system tools and can request allowlisted application launches, but impactful actions stop at an explicit approval dialog before execution.
 
 ## Interface
 
@@ -17,6 +17,7 @@ The Command Center is designed to feel like a real desktop assistant rather than
 - When JARVIS is listening, the interface shows an animated voice waveform driven by microphone amplitude.
 - While JARVIS is processing, the central brain visualization activates individual regions.
 - While JARVIS speaks, the visual state returns to the output waveform.
+- Approval-required actions appear as a focused confirmation dialog instead of silently running.
 - System status and recent activity stay visible without taking over the main interaction.
 - Voice recognition and speech synthesis use browser capabilities when available.
 - The UI is served by the same localhost-only Python service.
@@ -45,6 +46,20 @@ The current conversation is kept only in bounded process memory. The Responses A
 
 See [LLM integration](docs/llm.md) for the data flow and security boundary.
 
+## Tool and approval model
+
+The model can only see tools explicitly returned by `app.core.tool_registry`. Tool execution always passes through `Agent.authorize()`.
+
+Current tools:
+
+- `system_status`: read-only diagnostics, safe.
+- `current_time`: read-only local/UTC time, safe.
+- `open_application`: allowlisted Windows applications only, confirmation required.
+
+The application launcher accepts only `notepad`, `calculator` and `explorer`. It never accepts arbitrary executable paths, shell fragments or command strings. Approval requests live only in process memory and are single-use.
+
+Dangerous tools such as arbitrary shell execution and file deletion remain blocked and are not exposed to the model.
+
 ## Goals
 
 - Natural interaction through text and voice.
@@ -72,7 +87,7 @@ JARVIS
 │       └── Terminal
 ├── Security
 │   ├── Permission policy
-│   ├── Approval flow
+│   ├── Approval store
 │   └── Audit log
 └── Interfaces
     ├── Command Center
@@ -85,19 +100,19 @@ JARVIS
 Tools are classified as `safe`, `confirm` or `dangerous`.
 
 - **Safe:** can execute without interactive approval.
-- **Confirm:** requires an explicit approval decision.
-- **Dangerous:** blocked by default and only becomes available through a future, deliberately designed authorization flow.
+- **Confirm:** creates a short-lived approval request and waits for an explicit user decision.
+- **Dangerous:** blocked by default and never becomes executable merely because an LLM requested it.
 
 The assistant must never treat an LLM-generated instruction as equivalent to user authorization.
 
-The `/command` endpoint validates and bounds requests before routing them. Natural-language requests go to the configured language provider and never become shell commands automatically.
+The `/command` endpoint validates and bounds requests before routing them. Natural-language requests go to the configured language provider and never become shell commands automatically. The `/approval` endpoint consumes a server-generated request ID and can execute only the exact pending, allowlisted operation.
 
 ## Repository layout
 
 ```text
 app/
   api/       Local HTTP interface and static UI server
-  core/      Agent orchestration, command routing, conversation and policies
+  core/      Agent orchestration, command routing, conversation, approvals and policies
   providers/ LLM provider adapters
   tools/     Controlled system capabilities
   ui/        JARVIS Command Center
@@ -118,7 +133,7 @@ scripts/     Developer utilities
 - Python 3.11+
 - An OpenAI API key for conversational mode.
 - A modern browser for voice recognition and speech synthesis.
-- Windows is the primary target for automation; the foundation currently remains cross-platform.
+- Windows is the primary target for application automation; the foundation remains cross-platform.
 
 ## Development
 
@@ -154,11 +169,11 @@ Voice input requires microphone permission in the browser. The microphone stream
 | 0.1 | Core, permissions, audit, diagnostics |
 | 0.2 | Command Center UI and voice-state foundation |
 | 0.3 | LLM adapter and conversational orchestration |
-| 0.4 | Native speech pipeline, text-to-speech and wake word |
-| 0.5 | Persistent memory and user preferences |
-| 0.6 | Screen capture and vision |
-| 0.7 | Windows automation |
-| 0.8 | Git and GitHub tools |
+| 0.4 | Permissioned tool calls and explicit approval UI |
+| 0.5 | Native speech pipeline, wake word and richer Windows diagnostics |
+| 0.6 | Persistent memory and user preferences |
+| 0.7 | Screen capture and vision |
+| 0.8 | Windows automation, Git and GitHub tools |
 | 0.9 | Browser automation and multimodal workflows |
 | 1.0 | Stable personal assistant platform |
 
