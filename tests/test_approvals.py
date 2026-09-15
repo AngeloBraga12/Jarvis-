@@ -1,6 +1,7 @@
 """Security tests for the explicit approval boundary."""
 
 from app.core.agent import Agent
+from app.core.approvals import ApprovalStore
 from app.core.permissions import Risk
 
 
@@ -39,3 +40,13 @@ def test_approval_is_single_use(tmp_path) -> None:
     denied = agent.deny(request_id)
     assert denied["ok"] is True
     assert agent.deny(request_id)["error"] == "approval_not_found"
+
+
+def test_expired_approval_is_not_usable() -> None:
+    store = ApprovalStore(ttl_seconds=0.001)
+    request = store.create("open_application", {"application": "notepad"}, "test")
+
+    import time
+
+    time.sleep(0.01)
+    assert store.pop(request.request_id) is None
