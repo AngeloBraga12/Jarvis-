@@ -1,4 +1,4 @@
-"""Command router for deterministic tools and permissioned language-model tools."""
+"""Command router for deterministic commands and permissioned language-model tools."""
 
 import json
 from typing import TYPE_CHECKING
@@ -19,9 +19,10 @@ def _run_model_tools(
     response: object,
     calls: list[dict[str, object]],
     agent: "Agent",
-) -> list[dict[str, str]]:
-    """Execute only calls that pass the existing permission policy."""
+) -> tuple[list[dict[str, str]], list[dict[str, object]]]:
+    """Execute safe calls and collect confirmation requests without bypassing policy."""
     outputs: list[dict[str, str]] = []
+    approvals: list[dict[str, object]] = []
     for call in calls:
         name = call.get("name")
         call_id = call.get("call_id")
@@ -32,6 +33,10 @@ def _run_model_tools(
             arguments = {}
         agent.audit.record("model_tool_request", tool=name)
         result = agent.run(name, **arguments)
+        if isinstance(result, dict) and result.get("requires_approval"):
+            approval = result.get("approval")
+            if isinstance(approval, dict):
+                approvals.append(approval)
         outputs.append(
             {
                 "type": "function_call_output",
@@ -44,7 +49,7 @@ def _run_model_tools(
             tool=name,
             ok=bool(result.get("ok")) if isinstance(result, dict) else False,
         )
-    return outputs
+    return outputs, approvals
 
 
 def handle_command(
@@ -83,10 +88,11 @@ def handle_command(
     try:
         messages = session.snapshot_with_user(command)
         request_with_tools = getattr(provider, "request_with_tools", None)
+        approvals: list[dict[str, object]] = []
         if callable(request_with_tools):
             response, calls = request_with_tools(messages, model_tools())
             if calls:
-                tool_outputs = _run_model_tools(response, calls, agent)
+                tool_outputs, approvals = _run_model_tools(response, calls, agent)
                 response_text = provider.respond_to_tool_results(response, tool_outputs)
             else:
                 response_text = response.output_text.strip()
@@ -104,4 +110,7 @@ def handle_command(
         }
 
     agent.audit.record("llm_response", model=getattr(provider, "model", "unknown"))
-    return {"ok": True, "message": response_text, "source": "llm"}
+    result: dict[str, object] = {"ok": True, "message": response_text, "source": "llm"}
+    if approvals:
+        result["approval_required"] = approvals
+    return result
