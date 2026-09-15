@@ -28,8 +28,19 @@ class ToolCallingProvider(LLMProvider):
 def test_model_sees_only_registered_tools() -> None:
     tools = model_tools()
     names = {tool["name"] for tool in tools}
-    assert names == {"system_status", "current_time", "open_application"}
+    assert names == {"system_status", "system_health", "current_time", "open_application"}
     assert all(tool["name"] not in {"execute_command", "delete_file"} for tool in tools)
+
+
+def test_system_health_is_read_only(tmp_path) -> None:
+    agent = Agent()
+    agent.audit.path = tmp_path / "audit.jsonl"
+
+    result = agent.run("system_health")
+
+    assert result["ok"] is True
+    assert result["result"]["cpu_count"] is not None
+    assert result["result"]["disk_total_gb"] > 0
 
 
 def test_unknown_tool_is_blocked_without_approval(tmp_path) -> None:
