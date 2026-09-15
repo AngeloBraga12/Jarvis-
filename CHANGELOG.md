@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here.
 
+## [0.6.1] - 2026-09-15
+
+### Added
+- Native Android client foundation under `android/` using Kotlin and Jetpack Compose.
+- Explicit Android push-to-talk interaction.
+- Android SpeechRecognizer adapter with bounded transcription results.
+- Android TextToSpeech adapter for local spoken responses.
+- Initial secure backend-client boundary that rejects non-HTTPS remote endpoints.
+- Android architecture and security documentation.
+
+### Security
+- Android does not receive the LLM API key or provider credentials.
+- The current Windows service remains localhost-only; Android cannot execute remote commands yet.
+- Microphone access is requested only for explicit user interaction.
+- No continuous recognition or audio persistence is introduced by the Android foundation.
+- Secure device pairing and an authenticated gateway are required before network command execution.
+
 ## [0.6.0] - 2026-09-15
 
 ### Added
