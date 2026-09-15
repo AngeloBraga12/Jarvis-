@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here.
 
+## [0.4.0] - 2026-09-15
+
+### Added
+- Explicit model-visible tool registry.
+- Read-only `current_time` tool.
+- Allowlisted Windows application launcher for Notepad, Calculator and Explorer.
+- Ephemeral, single-use approval requests.
+- Local `/approval` endpoint for approve/deny decisions.
+- Command Center approval dialog for confirm-risk actions.
+- Security tests covering approval bypass and dangerous-tool blocking.
+
+### Security
+- Confirm-risk tools cannot execute without an explicit approval decision.
+- Approval requests are stored only in process memory and are consumed once.
+- The application launcher accepts an enum of fixed application names, never arbitrary paths or shell strings.
+- Dangerous tools remain blocked even when `approved=True` is supplied.
+- The model receives only explicitly registered tools.
+
 ## [0.3.0] - 2026-09-15
 
 ### Added
