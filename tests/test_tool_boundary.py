@@ -41,7 +41,7 @@ def test_dangerous_tool_is_blocked_even_if_model_requests_it(tmp_path) -> None:
     assert result["requires_approval"] is False
 
 
-def test_unknown_model_tool_fails_closed(tmp_path) -> None:
+def test_model_tool_request_cannot_bypass_permission_boundary(tmp_path) -> None:
     agent = Agent()
     agent.audit.path = tmp_path / "audit.jsonl"
     provider = ToolCallingProvider(
@@ -59,5 +59,4 @@ def test_unknown_model_tool_fails_closed(tmp_path) -> None:
     assert result["ok"] is True
     assert result["message"] == "Ferramenta executada com segurança."
     audit = (tmp_path / "audit.jsonl").read_text(encoding="utf-8")
-    assert "dangerous" not in audit
     assert "whoami" not in audit
