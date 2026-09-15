@@ -15,7 +15,7 @@ from app.providers.openai import OpenAIProvider
 
 UI_DIR = Path(__file__).resolve().parent.parent / "ui"
 MAX_BODY_BYTES = 4096
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -90,6 +90,8 @@ class Handler(BaseHTTPRequestHandler):
             )
         elif path == "/system":
             self._send(HTTPStatus.OK, self.agent.run("system_status"))
+        elif path == "/system/health":
+            self._send(HTTPStatus.OK, self.agent.run("system_health"))
         else:
             self._send(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
