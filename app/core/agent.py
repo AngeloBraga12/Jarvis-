@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from app.core.approvals import ApprovalRequest, ApprovalStore
+from app.core.approvals import ApprovalStore
 from app.core.audit import AuditLog
 from app.core.permissions import Risk, risk_for
 from app.tools.apps import open_application
