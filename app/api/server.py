@@ -67,14 +67,16 @@ class Handler(BaseHTTPRequestHandler):
             )
         elif path == "/system":
             self._send(HTTPStatus.OK, self.agent.run("system_status"))
-        elif path == "/conversation/clear":
-            self.conversation.clear()
-            self._send(HTTPStatus.OK, {"ok": True})
         else:
             self._send(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
     def do_POST(self) -> None:
-        if urlsplit(self.path).path != "/command":
+        path = urlsplit(self.path).path
+        if path == "/conversation/clear":
+            self.conversation.clear()
+            self._send(HTTPStatus.OK, {"ok": True})
+            return
+        if path != "/command":
             self._send(HTTPStatus.NOT_FOUND, {"error": "not found"})
             return
 
