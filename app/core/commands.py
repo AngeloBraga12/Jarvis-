@@ -1,8 +1,10 @@
-"""Command router for deterministic tools and the language-model conversation."""
+"""Command router for deterministic tools and permissioned language-model tools."""
 
+import json
 from typing import TYPE_CHECKING
 
 from app.core.conversation import Conversation
+from app.core.tool_registry import model_tools
 from app.providers.base import LLMProviderError
 
 if TYPE_CHECKING:
@@ -13,13 +15,45 @@ if TYPE_CHECKING:
 STATUS_TERMS = ("status", "sistema", "computador", "pc", "recursos")
 
 
+def _run_model_tools(
+    response: object,
+    calls: list[dict[str, object]],
+    agent: "Agent",
+) -> list[dict[str, str]]:
+    """Execute only calls that pass the existing permission policy."""
+    outputs: list[dict[str, str]] = []
+    for call in calls:
+        name = call.get("name")
+        call_id = call.get("call_id")
+        arguments = call.get("arguments")
+        if not isinstance(name, str) or not isinstance(call_id, str):
+            continue
+        if not isinstance(arguments, dict):
+            arguments = {}
+        agent.audit.record("model_tool_request", tool=name, arguments=arguments)
+        result = agent.run(name, **arguments)
+        outputs.append(
+            {
+                "type": "function_call_output",
+                "call_id": call_id,
+                "output": json.dumps(result, ensure_ascii=False, default=str),
+            }
+        )
+        agent.audit.record(
+            "model_tool_result",
+            tool=name,
+            ok=bool(result.get("ok")) if isinstance(result, dict) else False,
+        )
+    return outputs
+
+
 def handle_command(
     command: str,
     agent: "Agent",
     provider: "LLMProvider | None" = None,
     conversation: Conversation | None = None,
 ) -> dict[str, object]:
-    """Route safe commands first, then delegate natural language to the LLM."""
+    """Route deterministic commands, then allow the model to request approved tools."""
     normalized = " ".join(command.casefold().split())
     if not normalized:
         return {"ok": False, "message": "Não recebi nenhum comando."}
@@ -48,8 +82,19 @@ def handle_command(
     session = conversation or Conversation()
     try:
         messages = session.snapshot_with_user(command)
-        response = provider.respond(messages)
-        session.append_turn(command, response)
+        request_with_tools = getattr(provider, "request_with_tools", None)
+        if callable(request_with_tools):
+            response, calls = request_with_tools(messages, model_tools())
+            if calls:
+                tool_outputs = _run_model_tools(response, calls, agent)
+                response_text = provider.respond_to_tool_results(response, tool_outputs)
+            else:
+                response_text = response.output_text.strip()
+        else:
+            response_text = provider.respond(messages)
+        if not response_text:
+            raise LLMProviderError("The language model returned an empty response")
+        session.append_turn(command, response_text)
     except LLMProviderError as exc:
         agent.audit.record("llm_error", error=type(exc).__name__)
         return {
@@ -59,4 +104,4 @@ def handle_command(
         }
 
     agent.audit.record("llm_response", model=getattr(provider, "model", "unknown"))
-    return {"ok": True, "message": response, "source": "llm"}
+    return {"ok": True, "message": response_text, "source": "llm"}
