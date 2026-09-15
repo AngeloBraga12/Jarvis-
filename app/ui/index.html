@@ -14,7 +14,6 @@
         <div class="brand-mark" aria-hidden="true"><span></span></div>
         <div><strong>JARVIS</strong><small>Personal assistant</small></div>
       </div>
-
       <nav class="nav-list">
         <button class="nav-item active" type="button"><span>⌂</span>Início</button>
         <button class="nav-item" type="button"><span>▣</span>Sistema</button>
@@ -22,68 +21,40 @@
         <button class="nav-item" type="button"><span>◌</span>Memória</button>
         <button class="nav-item" type="button"><span>⚙</span>Configurações</button>
       </nav>
-
       <div class="sidebar-footer">
-        <div class="mode-card">
-          <span>Modo</span>
-          <strong>Assistente</strong>
-          <span class="chevron">⌄</span>
-        </div>
-        <button id="wakeButton" class="wake-button" type="button" aria-label="Ativar microfone">
-          <span class="mic-icon">●</span>
-        </button>
+        <div class="mode-card"><span>Modo</span><strong>Assistente</strong><span class="chevron">⌄</span></div>
+        <button id="wakeButton" class="wake-button" type="button" aria-label="Ativar microfone"><span class="mic-icon">●</span></button>
         <p>Pressione para falar<br>ou diga “JARVIS”</p>
       </div>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
-        <div>
-          <span class="eyebrow">JARVIS CORE</span>
-          <span id="connectionLabel" class="connection"><i></i> Online</span>
-        </div>
-        <div class="top-actions">
-          <button type="button" aria-label="Configurações">⚙</button>
-          <button type="button" aria-label="Minimizar">−</button>
-          <button type="button" aria-label="Fechar">×</button>
-        </div>
+        <div><span class="eyebrow">JARVIS CORE</span><span id="connectionLabel" class="connection"><i></i> Online</span></div>
+        <div class="top-actions"><button type="button" aria-label="Configurações">⚙</button><button type="button" aria-label="Minimizar">−</button><button type="button" aria-label="Fechar">×</button></div>
       </header>
 
       <section class="workspace">
         <section class="hero-panel panel">
           <div class="hero-copy">
             <div id="stateLabel" class="state-label"><i></i> Pronto para ouvir</div>
-            <h1>Olá, Angelo.</h1>
-            <p>Como posso ajudar hoje?</p>
+            <h1>Olá, Angelo.</h1><p>Como posso ajudar hoje?</p>
           </div>
-
           <div id="visualizer" class="visualizer state-idle" aria-live="polite">
             <canvas id="waveCanvas" class="wave-canvas" aria-hidden="true"></canvas>
             <div class="brain-wrap" aria-hidden="true">
               <div class="brain-glow"></div>
               <svg class="brain" viewBox="0 0 520 400" role="img" aria-label="Visualização do processamento">
-                <defs>
-                  <radialGradient id="brainFill" cx="50%" cy="45%" r="60%">
-                    <stop offset="0" stop-color="#49b8ff" stop-opacity=".95"/>
-                    <stop offset=".55" stop-color="#1265ad" stop-opacity=".75"/>
-                    <stop offset="1" stop-color="#062343" stop-opacity=".9"/>
-                  </radialGradient>
-                  <filter id="glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                </defs>
+                <defs><radialGradient id="brainFill" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#49b8ff" stop-opacity=".95"/><stop offset=".55" stop-color="#1265ad" stop-opacity=".75"/><stop offset="1" stop-color="#062343" stop-opacity=".9"/></radialGradient><filter id="glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
                 <path class="brain-outline" d="M165 290c-42-20-55-70-39-108-14-45 19-81 58-84 27-38 86-43 116-14 36-25 91-8 101 34 40 15 53 65 28 98 9 47-28 81-68 81-24 31-79 31-107 4-31 19-70 12-89-11z"/>
-                <g class="brain-ridges">
-                  <path d="M156 176c24-21 37-45 33-76M145 214c30-12 48-31 52-61M165 265c24-22 35-42 31-69M217 133c18 14 23 31 15 49M218 191c21-20 46-26 68-13M212 252c24-19 51-21 72-5M284 115c-6 28 3 47 26 58M298 181c25-19 51-22 75-10M290 240c19-18 43-20 69-8M348 129c-2 24 7 39 28 49M352 205c22-9 41-7 57 5"/>
-                </g>
-                <g class="brain-points" filter="url(#glow)">
-                  <circle class="node node-a" cx="205" cy="153" r="7"/><circle class="node node-b" cx="276" cy="181" r="6"/><circle class="node node-c" cx="316" cy="237" r="7"/><circle class="node node-d" cx="365" cy="177" r="5"/>
-                </g>
+                <g class="brain-ridges"><path d="M156 176c24-21 37-45 33-76M145 214c30-12 48-31 52-61M165 265c24-22 35-42 31-69M217 133c18 14 23 31 15 49M218 191c21-20 46-26 68-13M212 252c24-19 51-21 72-5M284 115c-6 28 3 47 26 58M298 181c25-19 51-22 75-10M290 240c19-18 43-20 69-8M348 129c-2 24 7 39 28 49M352 205c22-9 41-7 57 5"/></g>
+                <g class="brain-points" filter="url(#glow)"><circle class="node node-a" cx="205" cy="153" r="7"/><circle class="node node-b" cx="276" cy="181" r="6"/><circle class="node node-c" cx="316" cy="237" r="7"/><circle class="node node-d" cx="365" cy="177" r="5"/></g>
               </svg>
             </div>
             <div class="wave-label wave-left"><span>♩</span><b id="inputLabel">Você falando</b></div>
             <div class="wave-label wave-right"><span>◖</span><b id="outputLabel">JARVIS falando</b></div>
             <div id="processingBadge" class="processing-badge">Processando...</div>
           </div>
-
           <form id="commandForm" class="command-bar">
             <button id="micButton" class="command-mic" type="button" aria-label="Falar">●</button>
             <input id="commandInput" autocomplete="off" placeholder="Digite ou fale um comando..." aria-label="Comando para JARVIS">
@@ -92,19 +63,14 @@
         </section>
 
         <aside class="right-column">
-          <section class="panel status-panel">
-            <div class="panel-heading"><h2>Status do Sistema</h2><span class="live-dot"></span></div>
+          <section class="panel status-panel"><div class="panel-heading"><h2>Status do Sistema</h2><span class="live-dot"></span></div>
             <div class="metric"><span>CPU</span><strong id="cpuValue">--</strong><div class="spark"><i></i><i></i><i></i><i></i><i></i></div></div>
             <div class="metric"><span>GPU</span><strong id="gpuValue">--</strong><div class="spark"><i></i><i></i><i></i><i></i><i></i></div></div>
             <div class="metric"><span>RAM</span><strong id="ramValue">--</strong><div class="spark"><i></i><i></i><i></i><i></i><i></i></div></div>
             <div class="metric"><span>Disco</span><strong id="diskValue">--</strong><div class="spark"><i></i><i></i><i></i><i></i><i></i></div></div>
             <div class="metric"><span>Internet</span><strong>Local</strong><div class="spark"><i></i><i></i><i></i><i></i><i></i></div></div>
           </section>
-
-          <section class="panel activity-panel">
-            <div class="panel-heading"><h2>Atividades Recentes</h2><button id="clearActivity" type="button">Limpar</button></div>
-            <div id="activityList" class="activity-list"></div>
-          </section>
+          <section class="panel activity-panel"><div class="panel-heading"><h2>Atividades Recentes</h2><button id="clearActivity" type="button">Limpar</button></div><div id="activityList" class="activity-list"></div></section>
         </aside>
       </section>
 
@@ -114,9 +80,18 @@
         <button type="button" data-command="github"><span>◉</span><b>GitHub</b><small>Repositórios</small></button>
         <button type="button" data-command="projects"><span>▣</span><b>Projetos</b><small>Desenvolvimento</small></button>
       </section>
-
       <footer class="footer-note">“Grandes resultados não acontecem por acaso, mas por boa organização.”<span>JARVIS</span></footer>
     </main>
+  </div>
+
+  <div id="approvalDialog" class="approval-overlay" hidden>
+    <section class="approval-card" role="dialog" aria-modal="true" aria-labelledby="approvalTitle">
+      <span class="approval-kicker">AUTORIZAÇÃO NECESSÁRIA</span>
+      <h2 id="approvalTitle">JARVIS quer executar uma ação</h2>
+      <p id="approvalDescription">Esta ação exige sua confirmação explícita.</p>
+      <div class="approval-tool"><span>Ferramenta</span><strong id="approvalTool">--</strong></div>
+      <div class="approval-actions"><button id="approvalDeny" class="approval-deny" type="button">Recusar</button><button id="approvalApprove" class="approval-approve" type="button">Autorizar</button></div>
+    </section>
   </div>
   <script src="/ui/app.js" defer></script>
 </body>
