@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 
 from app.core.conversation import Conversation
+from app.providers.base import LLMProviderError
 
 if TYPE_CHECKING:
     from app.core.agent import Agent
@@ -49,7 +50,7 @@ def handle_command(
         messages = session.snapshot_with_user(command)
         response = provider.respond(messages)
         session.append_turn(command, response)
-    except Exception as exc:
+    except LLMProviderError as exc:
         agent.audit.record("llm_error", error=type(exc).__name__)
         return {
             "ok": False,
