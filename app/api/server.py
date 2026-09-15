@@ -1,4 +1,4 @@
-"""Local-only HTTP API and static UI for the JARVIS foundation."""
+"""Local-only HTTP API and static UI for the JARVIS service."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ from urllib.parse import urlsplit
 
 from app.core.agent import Agent
 from app.core.commands import handle_command
+from app.core.conversation import Conversation
+from app.providers.openai import OpenAIProvider
 
 UI_DIR = Path(__file__).resolve().parent.parent / "ui"
 MAX_BODY_BYTES = 4096
@@ -17,8 +19,15 @@ MAX_BODY_BYTES = 4096
 
 class Handler(BaseHTTPRequestHandler):
     agent = Agent()
+    provider = OpenAIProvider.from_env()
+    conversation = Conversation()
 
-    def _send(self, status: int, payload: dict[str, object], content_type: str = "application/json; charset=utf-8") -> None:
+    def _send(
+        self,
+        status: int,
+        payload: dict[str, object],
+        content_type: str = "application/json; charset=utf-8",
+    ) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", content_type)
@@ -48,9 +57,19 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/ui/app.js":
             self._send_file(UI_DIR / "app.js", "text/javascript; charset=utf-8")
         elif path == "/health":
-            self._send(HTTPStatus.OK, {"status": "ok", "version": "0.2.0"})
+            self._send(
+                HTTPStatus.OK,
+                {
+                    "status": "ok",
+                    "version": "0.3.0",
+                    "llm_configured": self.provider is not None,
+                },
+            )
         elif path == "/system":
             self._send(HTTPStatus.OK, self.agent.run("system_status"))
+        elif path == "/conversation/clear":
+            self.conversation.clear()
+            self._send(HTTPStatus.OK, {"ok": True})
         else:
             self._send(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
@@ -66,7 +85,10 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if length <= 0 or length > MAX_BODY_BYTES:
-            self._send(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "request body too large or empty"})
+            self._send(
+                HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
+                {"error": "request body too large or empty"},
+            )
             return
 
         try:
@@ -77,10 +99,15 @@ class Handler(BaseHTTPRequestHandler):
 
         command = payload.get("command") if isinstance(payload, dict) else None
         if not isinstance(command, str) or len(command) > 1000:
-            self._send(HTTPStatus.BAD_REQUEST, {"error": "command must be a string up to 1000 characters"})
+            self._send(
+                HTTPStatus.BAD_REQUEST,
+                {"error": "command must be a string up to 1000 characters"},
+            )
             return
 
-        self._send(HTTPStatus.OK, handle_command(command, self.agent))
+        result = handle_command(command, self.agent, self.provider, self.conversation)
+        status = HTTPStatus.OK if result.get("ok") else HTTPStatus.SERVICE_UNAVAILABLE
+        self._send(status, result)
 
     def log_message(self, *_args: object) -> None:
         return
