@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,20 +45,22 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@androidx.compose.runtime.Composable
-private fun JarvisTheme(content: @androidx.compose.runtime.Composable () -> Unit) {
+@Composable
+private fun JarvisTheme(content: @Composable () -> Unit) {
     MaterialTheme(content = content)
 }
 
-@androidx.compose.runtime.Composable
+@Composable
 private fun JarvisScreen() {
     val context = androidx.compose.ui.platform.LocalContext.current
     val voice = remember { AndroidVoice(context) }
     val deviceIdentity = remember { DeviceIdentity() }
+    val session = remember { DeviceSessionController() }
     val fingerprint = remember { deviceIdentity.publicKeyFingerprint() }
-    var status by remember { mutableStateOf("Não conectado ao host JARVIS") }
+    var status by remember { mutableStateOf("Pronto para interação local") }
     var transcript by remember { mutableStateOf("") }
     var listening by remember { mutableStateOf(false) }
+    var sessionState by remember { mutableStateOf<DeviceSession>(session.state) }
 
     fun startListening() {
         listening = true
@@ -66,7 +69,7 @@ private fun JarvisScreen() {
             onResult = {
                 transcript = it
                 listening = false
-                status = "Comando reconhecido. Aguardando conexão segura."
+                status = "Comando reconhecido. Aguardando canal seguro."
             },
             onError = {
                 listening = false
@@ -78,8 +81,7 @@ private fun JarvisScreen() {
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) startListening()
-        else status = "Permissão de microfone negada"
+        if (granted) startListening() else status = "Permissão de microfone negada"
     }
 
     DisposableEffect(Unit) {
@@ -88,27 +90,30 @@ private fun JarvisScreen() {
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
+            modifier = Modifier.fillMaxSize().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text("JARVIS", style = MaterialTheme.typography.headlineLarge)
             Text("Android Command Center", style = MaterialTheme.typography.titleMedium)
 
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("Estado", style = MaterialTheme.typography.labelLarge)
-                    Text(status)
-                    Text("Backend: não pareado", style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        "Identidade local: ${fingerprint.take(23)}…",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Estado da sessão", style = MaterialTheme.typography.labelLarge)
+                    Text(sessionLabel(sessionState))
+                    Text("Identidade local: ${fingerprint.take(23)}…", style = MaterialTheme.typography.bodySmall)
                 }
+            }
+
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = sessionState is DeviceSession.Unpaired || sessionState is DeviceSession.ConnectionError,
+                onClick = {
+                    session.beginPairing()
+                    sessionState = session.state
+                    status = "Pareamento iniciado localmente. Nenhum canal de rede foi aberto."
+                },
+            ) {
+                Text("Iniciar pareamento seguro")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -123,11 +128,7 @@ private fun JarvisScreen() {
                     shape = CircleShape,
                     enabled = !listening,
                     onClick = {
-                        if (ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.RECORD_AUDIO,
-                            ) == PackageManager.PERMISSION_GRANTED
-                        ) {
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                             startListening()
                         } else {
                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -143,23 +144,28 @@ private fun JarvisScreen() {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text("Último comando", style = MaterialTheme.typography.labelLarge)
                         Text(transcript)
-                        TextButton(
-                            onClick = {
-                                voice.speak(
-                                    "Comando recebido. O canal seguro ainda não está pareado.",
-                                )
-                            },
-                        ) {
+                        TextButton(onClick = {
+                            voice.speak("Comando recebido. O canal seguro ainda não está pareado.")
+                        }) {
                             Text("Testar voz")
                         }
                     }
                 }
             }
 
+            Text(status, style = MaterialTheme.typography.bodySmall)
             Text(
-                "A conexão com o Windows só será habilitada depois do pareamento autenticado. O app não expõe nem recebe a chave da API do modelo.",
+                "A conexão com o Windows só será habilitada após autenticação. A chave privada permanece no Android Keystore e a chave da API do modelo não entra no aplicativo.",
                 style = MaterialTheme.typography.bodySmall,
             )
         }
     }
+}
+
+private fun sessionLabel(state: DeviceSession): String = when (state) {
+    DeviceSession.Unpaired -> "Não pareado"
+    DeviceSession.Pairing -> "Pareamento em andamento"
+    is DeviceSession.Paired -> "Pareado: ${state.deviceId.take(23)}…"
+    DeviceSession.Revoked -> "Revogado"
+    is DeviceSession.ConnectionError -> "Erro de conexão: ${state.message}"
 }
