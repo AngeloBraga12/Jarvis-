@@ -53,30 +53,33 @@ private fun JarvisTheme(content: @androidx.compose.runtime.Composable () -> Unit
 private fun JarvisScreen() {
     val context = androidx.compose.ui.platform.LocalContext.current
     val voice = remember { AndroidVoice(context) }
+    val deviceIdentity = remember { DeviceIdentity() }
+    val fingerprint = remember { deviceIdentity.publicKeyFingerprint() }
     var status by remember { mutableStateOf("Não conectado ao host JARVIS") }
     var transcript by remember { mutableStateOf("") }
     var listening by remember { mutableStateOf(false) }
 
+    fun startListening() {
+        listening = true
+        status = "Ouvindo..."
+        voice.listen(
+            onResult = {
+                transcript = it
+                listening = false
+                status = "Comando reconhecido. Aguardando conexão segura."
+            },
+            onError = {
+                listening = false
+                status = it
+            },
+        )
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) {
-            listening = true
-            status = "Ouvindo..."
-            voice.listen(
-                onResult = {
-                    transcript = it
-                    listening = false
-                    status = "Comando reconhecido. Aguardando conexão segura."
-                },
-                onError = {
-                    listening = false
-                    status = it
-                },
-            )
-        } else {
-            status = "Permissão de microfone negada"
-        }
+        if (granted) startListening()
+        else status = "Permissão de microfone negada"
     }
 
     DisposableEffect(Unit) {
@@ -94,10 +97,17 @@ private fun JarvisScreen() {
             Text("Android Command Center", style = MaterialTheme.typography.titleMedium)
 
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Text("Estado", style = MaterialTheme.typography.labelLarge)
                     Text(status)
                     Text("Backend: não pareado", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Identidade local: ${fingerprint.take(23)}…",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
 
@@ -113,20 +123,12 @@ private fun JarvisScreen() {
                     shape = CircleShape,
                     enabled = !listening,
                     onClick = {
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                            listening = true
-                            status = "Ouvindo..."
-                            voice.listen(
-                                onResult = {
-                                    transcript = it
-                                    listening = false
-                                    status = "Comando reconhecido. Aguardando conexão segura."
-                                },
-                                onError = {
-                                    listening = false
-                                    status = it
-                                },
-                            )
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.RECORD_AUDIO,
+                            ) == PackageManager.PERMISSION_GRANTED
+                        ) {
+                            startListening()
                         } else {
                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         }
@@ -141,7 +143,13 @@ private fun JarvisScreen() {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text("Último comando", style = MaterialTheme.typography.labelLarge)
                         Text(transcript)
-                        TextButton(onClick = { voice.speak("Comando recebido. O canal seguro ainda não está pareado.") }) {
+                        TextButton(
+                            onClick = {
+                                voice.speak(
+                                    "Comando recebido. O canal seguro ainda não está pareado.",
+                                )
+                            },
+                        ) {
                             Text("Testar voz")
                         }
                     }
